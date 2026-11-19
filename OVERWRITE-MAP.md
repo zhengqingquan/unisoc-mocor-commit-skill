@@ -3,9 +3,10 @@
 仅用于 **客户 bat 仓**（有含 `xcopy`+`Prj_mk` 的 `<Product>.bat`）。  
 路径相对编译根（含 `make.bat` / `Prj_mk` 的那一层；也可能在 `idh.code\MS_Code`）。
 
-**平台仓** / **Prj_mk 补丁仓** 不要用本表拦截树内源；补丁仓仍应提交 `Prj_mk\` 真相源。见 `SKILL.md` §0。
+**平台仓** / **无 zxe 的 Prj_mk 补丁仓**：不要用本表 A–E 拦截树内源；仍应提交 `Prj_mk\` 真相源。见 `SKILL.md` §0。  
+**补丁仓 + zxe 入口**：用 **§F**（sprdbuildE 拷贝链），勿套客户 bat 专属条目硬拒无关树内源。
 
-不同产品 bat 条目会增减；**以当前 `<Product>.bat` 实际 `xcopy`/`copy`/`echo` 为准**。
+不同产品 bat / zxe 条目会增减；**以当前 `<Product>.bat` 或 `<工程>.zxe` 实际命令/键为准**。
 
 记号：`Prj` = `Prj_mk\<工程>\`
 
@@ -73,10 +74,36 @@ Keymap / PinMap：部分 bat 从 `MS_Customize\...\config\<客户 refphone 源�
 
 ## E. 判定口诀（commit）
 
-1. 无产品 xcopy bat：有 `Prj_mk` → 补丁仓；无 → 平台仓。勿用本表拒树内源；只挡 `build\` 等产物。  
+1. 无产品 xcopy bat：有 `Prj_mk` → 补丁仓；无 → 平台仓。无 zxe 时勿用本表 A–E 拒树内源；只挡 `build\` 等产物。  
 2. `build\` 下 → 产物，跳过。  
 3. 出现在 `<Product>.bat` 的 `xcopy` **右侧** → 找左侧源；只交源。  
-4. `hx_macro_switch.mk` / 被 include 的 `Prj_mk\*.mk` → 真相源（排除 `USER_DEBUG.mk`）。  
+4. `hx_macro_switch.mk` / 被 include 的 `Prj_mk\*.mk` / `<工程>.zxe` → 真相源（排除 `USER_DEBUG.mk`）。  
 5. 有同名 `*_in_use.h` → 交模板，不交生成副本。  
 6. `copy nul` + `echo >>` 写出 → 生成物；交驱动它的源或 bat 变量。  
-7. 吃不准 → 打开当前 `<Product>.bat` 搜文件名再分类；禁止默认「全 add」。
+7. 有 `sprdbuildE.pl` + `*.zxe` → 另按 **§F**。  
+8. 吃不准 → 打开当前 `<Product>.bat` 或 `<工程>.zxe` 搜路径再分类；禁止默认「全 add」。
+
+## F. 补丁仓 + zxe / sprdbuildE（源 → 树内目标）
+
+仅当编译根有 `sprdbuildE.pl` 且存在 `Prj_mk\<工程>\<工程>.zxe`。  
+脚本在 `make` 前按 zxe 键拷贝；**交左侧源，勿只交右侧**。具体子路径以仓内脚本与当前 zxe 为准（下表为常见模式）。
+
+记号：`ZxeRes` = zxe 资源键指向的 `Prj_mk\<资源目录>`；`ZxeDrv` = 驱动键指向的 `Prj_mk\<驱动修订目录>`；`ZxeRf` = 射频键指向目录；`Prj` = `Prj_mk\<工程>\`。
+
+| 源（交这个） | 目标（勿单独交） |
+|-------------|------------------|
+| `ZxeDrv\tft*` | `MS_Customize\source\product\driver\lcd\` |
+| `ZxeDrv\sensor*` | `MS_Customize\source\product\driver\dc\` |
+| `ZxeRes\CustomImages\wallpaper\` | `MS_MMI_Main\...\staticwallpaper\`（常双资源树） |
+| `ZxeRes\CustomImages\POWER_ON_OFF\` | `...\Power_on_off\` |
+| `ZxeRes\CustomImages\Mainmenu_user\` | `...\Mainmenu_user\` 及同目录生成/覆盖的 mainmenu/menutable 源 |
+| `ZxeRes\CustomImages\ring\*` | `MS_MMI_Main\source\resource\Common\RING\`（或 common\RING） |
+| `ZxeRes\...\str_table.xls` | `MS_MMI_Main\source\resource\Common\str_table.xls` |
+| `ZxeRes\...\color_table.xls` | `MS_MMI_Main\source\resource\<资源工程>\color_table.xls` |
+| `ZxeRes\hx_nv_cus_config\` 或 `ZxeRf\hx_nv_cus_config\` | `common\nv_parameters\modem_nv\` 等 |
+| `Prj\hx_cust_config.h` | `RTOS\export\inc\hx_cust_config.h` |
+| `Prj\key*`（工程内 key 头） | `MS_MMI_Main\...\eng\h\test_key_text.h` |
+| `Prj\<工程>.zxe`、`Prj\<工程>.mk` | （配置/工程宏本身，应交） |
+
+另：`Prj_mk\USER_DEBUG.mk` 常由 sprdbuildE 全编菜单按 USER/DEBUG 重写 → **通常不交**。  
+`build\<工程>_builddir\` 仍永不交。
